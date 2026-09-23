@@ -110,6 +110,25 @@
         "muFront": 1,
         "muRear": 1.15
       },
+      "measured": {
+        "zeroToSixtyS": 3.88,
+        "zeroToHundredS": 8.28,
+        "zeroToSixtyGrassS": 7.75,
+        "topSpeedKmh": 203,
+        "braking100to0M": 39.3,
+        "lateralG": 0.95
+      },
+      "sound": {
+        "cylinders": 4,
+        "extractorLength": 0.55,
+        "exhaustLength": 1.9,
+        "mufflerCutoff": 2400,
+        "roughness": 0.08,
+        "overrunPops": 0.3,
+        "intake": 0.4,
+        "mechanical": 0.25,
+        "volume": 1
+      },
       "asset": {
         "file": "models/1999_volkswagen_gol_2000_gti_g2.glb",
         "forward": "-z",
@@ -131,14 +150,6 @@
           "license": "CC BY-NC 4.0",
           "licenseUrl": "http://creativecommons.org/licenses/by-nc/4.0/"
         }
-      },
-      "measured": {
-        "zeroToSixtyS": 3.88,
-        "zeroToHundredS": 8.28,
-        "zeroToSixtyGrassS": 7.75,
-        "topSpeedKmh": 203,
-        "braking100to0M": 39.3,
-        "lateralG": 0.95
       }
     }
   ]

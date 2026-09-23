@@ -116,7 +116,7 @@ export function createCarState({ x, y, heading }, spec) {
     axLoad: 0, ayLoad: 0,
     pitch: 0, pitchVel: 0, roll: 0, rollVel: 0,
     slipF: 0, slipR: 0, latUseF: 0, latUseR: 0,
-    wheelspin: 0, tcActive: false, espActive: false,
+    wheelspin: 0, spinF: 0, spinR: 0, tcActive: false, espActive: false,
     skidF: 0, skidR: 0,
     wheelAngF: 0, wheelAngR: 0,
     surfaceGrip: 1, surfaceRoll: 0, onRoad: true,
@@ -358,6 +358,8 @@ export function physicsStep(car, dt, assist) {
   car.slipF = slipF;
   car.slipR = slipR;
   car.wheelspin = wheelspin;
+  car.spinF = front.wheelspin;
+  car.spinR = rear.wheelspin;
   car.tcActive = tcActive;
   car.espActive = espActive;
 

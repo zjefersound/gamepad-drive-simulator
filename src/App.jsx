@@ -5,7 +5,8 @@ import { createGame } from './game/game';
 import World from './components/World';
 import Car from './components/Car';
 import Hud from './components/Hud';
-import { CameraRig, Cones, Simulation, Skidmarks, SunLight } from './components/Scene';
+import { CameraRig, Cones, Simulation, SunLight } from './components/Scene';
+import { Skidmarks, TireSmoke } from './components/Effects';
 
 export default function App() {
   const game = useMemo(createGame, []);
@@ -26,6 +27,7 @@ export default function App() {
         <World game={game} />
         <SunLight game={game} />
         <Skidmarks game={game} />
+        <TireSmoke game={game} />
         <Cones game={game} />
         <Car game={game} />
         <CameraRig game={game} />

@@ -77,66 +77,19 @@ export function CameraRig({ game }) {
       camera.rotateZ(-car.roll * 0.5);
       fovTarget = 68 + clamp(speed, 0, 70) * 0.18;
     }
+    // Tremor: derrapagem, grama e batidas (ruído suave, não aleatório por frame)
+    const offroad = car.onRoad ? 0 : clamp(speed / 25, 0, 1);
+    const shake = Math.max(car.skidR, car.skidF) * 0.025 * clamp(speed / 15, 0, 1) + offroad * 0.035 + game.impact * 0.2;
+    if (shake > 0.001) {
+      const tt = performance.now() / 1000;
+      camera.position.x += Math.sin(tt * 41) * Math.sin(tt * 13.7) * shake;
+      camera.position.y += Math.sin(tt * 53 + 1.3) * Math.sin(tt * 9.1) * shake;
+      camera.position.z += Math.sin(tt * 37 + 2.1) * Math.sin(tt * 11.3) * shake;
+    }
     camera.fov += (fovTarget - camera.fov) * Math.min(1, dt * 3);
     camera.updateProjectionMatrix();
   });
   return null;
-}
-
-const MAX_SEGMENTS = 4000;
-
-export function Skidmarks({ game }) {
-  const { geometry, material } = useMemo(() => {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_SEGMENTS * 12), 3).setUsage(THREE.DynamicDrawUsage));
-    const idx = new Uint32Array(MAX_SEGMENTS * 6);
-    for (let i = 0; i < MAX_SEGMENTS; i++) {
-      const v = i * 4;
-      idx.set([v, v + 1, v + 2, v + 2, v + 1, v + 3], i * 6);
-    }
-    g.setIndex(new THREE.BufferAttribute(idx, 1));
-    const m = new THREE.MeshBasicMaterial({
-      color: '#0d0d0d', transparent: true, opacity: 0.42, depthWrite: false,
-      polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
-    });
-    return { geometry: g, material: m };
-  }, []);
-  const st = useRef({ next: 0, last: [0, 1, 2, 3].map(() => ({ x: 0, y: 0, active: false })) });
-
-  useFrame(() => {
-    const car = game.car;
-    const c = Math.cos(car.heading), s = Math.sin(car.heading);
-    const pos = geometry.attributes.position;
-    let changed = false;
-    for (let w = 0; w < 4; w++) {
-      const intensity = w < 2 ? car.skidF : car.skidR;
-      const last = st.current.last[w];
-      if (intensity < 0.3) { last.active = false; continue; }
-      const lx = w < 2 ? car.spec.cgToFront : -car.spec.cgToRear;
-      const ly = w % 2 === 0 ? car.spec.halfTrack : -car.spec.halfTrack;
-      const px = car.x + lx * c - ly * s;
-      const py = car.y + lx * s + ly * c;
-      if (!last.active) { Object.assign(last, { x: px, y: py, active: true }); continue; }
-      const dx = px - last.x, dy = py - last.y;
-      const len = Math.hypot(dx, dy);
-      if (len < 0.35) continue;
-      if (len > 3) { Object.assign(last, { x: px, y: py }); continue; }
-      const nx = (-dy / len) * 0.12, ny = (dx / len) * 0.12;
-      const i = st.current.next;
-      const arr = pos.array;
-      const put = (k, x, y) => { arr[i * 12 + k * 3] = x; arr[i * 12 + k * 3 + 1] = 0.045; arr[i * 12 + k * 3 + 2] = -y; };
-      put(0, last.x + nx, last.y + ny);
-      put(1, last.x - nx, last.y - ny);
-      put(2, px + nx, py + ny);
-      put(3, px - nx, py - ny);
-      st.current.next = (i + 1) % MAX_SEGMENTS;
-      Object.assign(last, { x: px, y: py });
-      changed = true;
-    }
-    if (changed) pos.needsUpdate = true;
-  });
-
-  return <mesh geometry={geometry} material={material} frustumCulled={false} />;
 }
 
 export function Cones({ game }) {

@@ -2,120 +2,385 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Carros do Gamepad Drive Simulator",
   "type": "object",
-  "required": ["cars"],
+  "required": [
+    "cars"
+  ],
   "properties": {
     "cars": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "brand", "model", "year", "physics"],
+        "required": [
+          "id",
+          "brand",
+          "model",
+          "year",
+          "physics"
+        ],
         "properties": {
-          "id": { "type": "string", "description": "Identificador único (kebab-case)" },
-          "brand": { "type": "string" },
-          "model": { "type": "string" },
-          "generation": { "type": "string" },
-          "year": { "type": "integer" },
-          "country": { "type": "string" },
-          "bodyStyle": { "type": "string" },
-          "description": { "type": "string" },
-          "class": { "enum": ["D", "C", "B", "A", "S1", "S2", "X"], "description": "Gerado por npm run car-stats" },
-          "pi": { "type": "integer", "minimum": 100, "maximum": 999, "description": "Índice de desempenho, gerado por npm run car-stats" },
+          "id": {
+            "type": "string",
+            "description": "Identificador único (kebab-case)"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "generation": {
+            "type": "string"
+          },
+          "year": {
+            "type": "integer"
+          },
+          "country": {
+            "type": "string"
+          },
+          "bodyStyle": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "class": {
+            "enum": [
+              "D",
+              "C",
+              "B",
+              "A",
+              "S1",
+              "S2",
+              "X"
+            ],
+            "description": "Gerado por npm run car-stats"
+          },
+          "pi": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 999,
+            "description": "Índice de desempenho, gerado por npm run car-stats"
+          },
           "specs": {
             "type": "object",
             "description": "Ficha técnica real (exibida no jogo)",
             "properties": {
-              "engine": { "type": "string" },
-              "displacementCc": { "type": "number" },
-              "powerCv": { "type": "number" },
-              "powerRpm": { "type": "number" },
-              "torqueNm": { "type": "number" },
-              "torqueRpm": { "type": "number" },
-              "drivetrain": { "enum": ["FWD", "RWD", "AWD"] },
-              "transmission": { "type": "string" },
-              "weightKg": { "type": "number" },
-              "weightDistributionFront": { "type": "number" },
-              "lengthMm": { "type": "number", "description": "Também usado na caixa de colisão" },
-              "widthMm": { "type": "number", "description": "Também usado na caixa de colisão" },
-              "heightMm": { "type": "number" },
-              "wheelbaseMm": { "type": "number" },
-              "tires": { "type": "string" },
-              "topSpeedKmh": { "type": "number" },
-              "zeroToHundredS": { "type": "number" },
-              "source": { "type": "string" }
+              "engine": {
+                "type": "string"
+              },
+              "displacementCc": {
+                "type": "number"
+              },
+              "powerCv": {
+                "type": "number"
+              },
+              "powerRpm": {
+                "type": "number"
+              },
+              "torqueNm": {
+                "type": "number"
+              },
+              "torqueRpm": {
+                "type": "number"
+              },
+              "drivetrain": {
+                "enum": [
+                  "FWD",
+                  "RWD",
+                  "AWD"
+                ]
+              },
+              "transmission": {
+                "type": "string"
+              },
+              "weightKg": {
+                "type": "number"
+              },
+              "weightDistributionFront": {
+                "type": "number"
+              },
+              "lengthMm": {
+                "type": "number",
+                "description": "Também usado na caixa de colisão"
+              },
+              "widthMm": {
+                "type": "number",
+                "description": "Também usado na caixa de colisão"
+              },
+              "heightMm": {
+                "type": "number"
+              },
+              "wheelbaseMm": {
+                "type": "number"
+              },
+              "tires": {
+                "type": "string"
+              },
+              "topSpeedKmh": {
+                "type": "number"
+              },
+              "zeroToHundredS": {
+                "type": "number"
+              },
+              "source": {
+                "type": "string"
+              }
             }
           },
           "stats": {
             "type": "object",
             "description": "Notas 0–10 geradas por npm run car-stats",
             "properties": {
-              "speed": { "type": "number", "minimum": 0, "maximum": 10 },
-              "acceleration": { "type": "number", "minimum": 0, "maximum": 10 },
-              "braking": { "type": "number", "minimum": 0, "maximum": 10 },
-              "handling": { "type": "number", "minimum": 0, "maximum": 10 },
-              "launch": { "type": "number", "minimum": 0, "maximum": 10 },
-              "offroad": { "type": "number", "minimum": 0, "maximum": 10 }
+              "speed": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10
+              },
+              "acceleration": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10
+              },
+              "braking": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10
+              },
+              "handling": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10
+              },
+              "launch": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10
+              },
+              "offroad": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10
+              }
             }
           },
-          "measured": { "type": "object", "description": "Medições da simulação (npm run car-stats)" },
+          "measured": {
+            "type": "object",
+            "description": "Medições da simulação (npm run car-stats)"
+          },
           "physics": {
             "type": "object",
             "description": "Parâmetros da simulação (valores ausentes usam o padrão)",
             "properties": {
-              "mass": { "type": "number", "description": "kg, com piloto" },
-              "inertia": { "type": "number", "description": "kg·m² no eixo vertical (opcional)" },
-              "cgToFront": { "type": "number", "description": "m, do centro de massa ao eixo dianteiro" },
-              "cgToRear": { "type": "number", "description": "m, do centro de massa ao eixo traseiro" },
-              "cgHeight": { "type": "number" },
-              "wheelRadius": { "type": "number" },
-              "halfTrack": { "type": "number", "description": "metade da bitola, m" },
-              "maxSteer": { "type": "number", "description": "rad" },
-              "drivetrain": { "enum": ["FWD", "RWD", "AWD"] },
-              "driveFrontShare": { "type": "number", "minimum": 0, "maximum": 1, "description": "Sobrescreve a divisão de torque" },
+              "mass": {
+                "type": "number",
+                "description": "kg, com piloto"
+              },
+              "inertia": {
+                "type": "number",
+                "description": "kg·m² no eixo vertical (opcional)"
+              },
+              "cgToFront": {
+                "type": "number",
+                "description": "m, do centro de massa ao eixo dianteiro"
+              },
+              "cgToRear": {
+                "type": "number",
+                "description": "m, do centro de massa ao eixo traseiro"
+              },
+              "cgHeight": {
+                "type": "number"
+              },
+              "wheelRadius": {
+                "type": "number"
+              },
+              "halfTrack": {
+                "type": "number",
+                "description": "metade da bitola, m"
+              },
+              "maxSteer": {
+                "type": "number",
+                "description": "rad"
+              },
+              "drivetrain": {
+                "enum": [
+                  "FWD",
+                  "RWD",
+                  "AWD"
+                ]
+              },
+              "driveFrontShare": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Sobrescreve a divisão de torque"
+              },
               "torqueCurve": {
                 "type": "array",
-                "items": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
                 "description": "Pares [rpm, Nm]"
               },
-              "idleRpm": { "type": "number" },
-              "redline": { "type": "number" },
-              "shiftUpRpm": { "type": "number" },
-              "shiftDownRpm": { "type": "number" },
-              "engineBrake": { "type": "number" },
-              "gears": { "type": "array", "items": { "type": "number" } },
-              "reverseGear": { "type": "number" },
-              "finalDrive": { "type": "number" },
-              "drivetrainEff": { "type": "number" },
-              "brakeForce": { "type": "number", "description": "N, força total máxima" },
-              "brakeBias": { "type": "number", "description": "fração na dianteira" },
-              "drag": { "type": "number", "description": "½·ρ·Cd·A" },
-              "rollingResistance": { "type": "number" },
-              "muFront": { "type": "number" },
-              "muRear": { "type": "number" }
+              "idleRpm": {
+                "type": "number"
+              },
+              "redline": {
+                "type": "number"
+              },
+              "shiftUpRpm": {
+                "type": "number"
+              },
+              "shiftDownRpm": {
+                "type": "number"
+              },
+              "engineBrake": {
+                "type": "number"
+              },
+              "gears": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "reverseGear": {
+                "type": "number"
+              },
+              "finalDrive": {
+                "type": "number"
+              },
+              "drivetrainEff": {
+                "type": "number"
+              },
+              "brakeForce": {
+                "type": "number",
+                "description": "N, força total máxima"
+              },
+              "brakeBias": {
+                "type": "number",
+                "description": "fração na dianteira"
+              },
+              "drag": {
+                "type": "number",
+                "description": "½·ρ·Cd·A"
+              },
+              "rollingResistance": {
+                "type": "number"
+              },
+              "muFront": {
+                "type": "number"
+              },
+              "muRear": {
+                "type": "number"
+              }
+            }
+          },
+          "sound": {
+            "type": "object",
+            "description": "Parâmetros do som procedural do motor (engineWorklet.js)",
+            "properties": {
+              "cylinders": {
+                "type": "integer",
+                "description": "Número de cilindros (define a frequência de explosões)"
+              },
+              "extractorLength": {
+                "type": "number",
+                "description": "Comprimento do coletor, m"
+              },
+              "exhaustLength": {
+                "type": "number",
+                "description": "Comprimento do tubo até o abafador, m"
+              },
+              "mufflerCutoff": {
+                "type": "number",
+                "description": "Corte do abafador com acelerador no fundo, Hz (maior = mais aberto/esportivo)"
+              },
+              "roughness": {
+                "type": "number",
+                "description": "Irregularidade entre explosões (0–0,3)"
+              },
+              "overrunPops": {
+                "type": "number",
+                "description": "Estalos ao desacelerar (0–1)"
+              },
+              "intake": {
+                "type": "number",
+                "description": "Volume do ronco de admissão"
+              },
+              "mechanical": {
+                "type": "number",
+                "description": "Volume do ruído mecânico"
+              },
+              "volume": {
+                "type": "number"
+              }
             }
           },
           "asset": {
             "type": "object",
             "description": "Modelo 3D (glTF/GLB em public/)",
             "properties": {
-              "file": { "type": "string" },
-              "forward": { "enum": ["+x", "-x", "+z", "-z"], "description": "Para onde aponta a frente no arquivo" },
-              "scale": { "type": "number" },
+              "file": {
+                "type": "string"
+              },
+              "forward": {
+                "enum": [
+                  "+x",
+                  "-x",
+                  "+z",
+                  "-z"
+                ],
+                "description": "Para onde aponta a frente no arquivo"
+              },
+              "scale": {
+                "type": "number"
+              },
               "wheelNodes": {
                 "type": "object",
-                "properties": { "front": { "type": "string" }, "rear": { "type": "string" } },
+                "properties": {
+                  "front": {
+                    "type": "string"
+                  },
+                  "rear": {
+                    "type": "string"
+                  }
+                },
                 "description": "Nós com as rodas de cada eixo"
               },
-              "brakeLightMaterials": { "type": "array", "items": { "type": "string" } },
-              "fallback": { "type": "string" },
+              "brakeLightMaterials": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "fallback": {
+                "type": "string"
+              },
               "credits": {
                 "type": "object",
                 "properties": {
-                  "title": { "type": "string" },
-                  "author": { "type": "string" },
-                  "authorUrl": { "type": "string" },
-                  "source": { "type": "string" },
-                  "license": { "type": "string" },
-                  "licenseUrl": { "type": "string" }
+                  "title": {
+                    "type": "string"
+                  },
+                  "author": {
+                    "type": "string"
+                  },
+                  "authorUrl": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  },
+                  "license": {
+                    "type": "string"
+                  },
+                  "licenseUrl": {
+                    "type": "string"
+                  }
                 }
               }
             }

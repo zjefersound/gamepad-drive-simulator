@@ -50,6 +50,27 @@ A física (`src/game/carPhysics.js`) é própria e roda a **240 Hz** em passo fi
 - A traseira tem mais aderência e uma queda mais suave depois do pico. Assim a derrapagem é progressiva e controlável.
 - Em baixa velocidade, o modelo se mistura com o cinemático, o que deixa as manobras estáveis.
 
+## Som
+
+Todo o som é gerado em tempo real (Web Audio), sem arquivos de áudio:
+
+- **Motor** (`src/game/engineWorklet.js`, AudioWorklet): modelo fisicamente informado, inspirado em [Baldan et al. — *Physically informed car engine sound synthesis*](https://www.researchgate.net/publication/280086598_Physically_informed_car_engine_sound_synthesis_for_virtual_and_augmented_environments):
+  - cada combustão gera um pulso de pressão, com variação aleatória entre as explosões;
+  - os pulsos ressoam em tubos simulados de coletor e escapamento;
+  - o abafador abre com o acelerador;
+  - há ronco de admissão e "tic" de válvulas;
+  - o corte de giro e o corte na troca de marcha pulam explosões, e ao desacelerar em giro alto aparecem estalos.
+
+  O caráter do motor de cada carro fica em `sound` no `cars.json`: cilindros, comprimento dos tubos, abafador, irregularidade e estalos.
+- **Pneus**: uma camada por eixo, com guincho tonal que surge perto do limite de aderência, chiado quando a derrapagem abre, pan estéreo pelo lado da escapada e ruído de rolagem.
+- **Grama**, vento e buzina.
+
+## Efeitos de derrapagem
+
+- **Fumaça de pneu** no asfalto e **poeira** na grama: partículas com shader de disco suave, que herdam a velocidade do carro, sobem e se expandem.
+- **Marcas de pneu** com opacidade proporcional ao escorregamento e entrada suave. A roda externa da curva marca mais, porque carrega mais peso. Na grama, o pneu deixa sulcos marrons.
+- **Tremor de câmera** leve ao derrapar, na grama e em batidas.
+
 ## Estrutura
 
 ```
@@ -94,6 +115,6 @@ O script roda testes padronizados na própria física do jogo: 0–60, 0–100, 
 - **VW Gol GTI 16V G2 "bola"** (1999) com o modelo 3D acima. Se o arquivo não carregar, entra um Gol bola modelado proceduralmente (`src/components/GolBola.jsx`).
 - Circuito fechado com zebras, cronômetro de voltas e minimapa
 - Área de treino com slalom, círculo e cones derrubáveis
-- Marcas de pneu, rolagem e arfagem da carroceria
+- Fumaça, poeira, marcas de pneu, rolagem e arfagem da carroceria
 - Quatro câmeras: perseguição, perseguição longe, capô e para-choque
-- Som procedural de motor, pneus, vento e buzina (Web Audio, sem arquivos externos)
+- Som procedural de motor, pneus, grama, vento e buzina (veja "Som")

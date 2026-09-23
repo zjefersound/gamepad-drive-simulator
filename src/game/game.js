@@ -19,6 +19,8 @@ export function createGame(carId) {
   const carData = getCar(carId);
   const track = createTrack();
   const spawnIndex = track.N - 10;
+  const audio = createAudio();
+  audio.configure(carData);
   return {
     track,
     trees: generateTrees(track),
@@ -26,7 +28,7 @@ export function createGame(carId) {
     carData,
     car: createCarState(spawnAt(track, spawnIndex), buildSpec(carData)),
     input: createInput(),
-    audio: createAudio(),
+    audio,
     settings: { assistLevel: 0, manual: false, cameraMode: 0 },
     lap: { current: 0, best: null, last: null, started: false, checkpoint: false, lastIndex: spawnIndex, count: 0 },
     started: false,
@@ -231,7 +233,7 @@ export function updateGame(game, dt) {
   updateCones(game, dt);
   suspensionStep(car, dt);
   updateLap(game, near.index, dt);
-  game.audio.update(car, st);
+  game.audio.update(car, st, dt);
 
   // Vibração do controle
   game.impact = Math.max(0, game.impact - dt * 3);

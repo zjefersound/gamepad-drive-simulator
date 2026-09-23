@@ -76,7 +76,7 @@ export function prepareCarModel(gltf, asset, spec) {
     if (brakeNames.has(o.material.name)) {
       if (!brakeMaterials.has(o.material.name)) {
         const m = o.material.clone();
-        m.emissive = new THREE.Color(m.map ? '#ffffff' : '#ff1010');
+        m.emissive = new THREE.Color(m.map ? '#ff2a2a' : '#ff1010');
         m.emissiveMap = m.map ?? null;
         brakeMaterials.set(o.material.name, m);
       }
