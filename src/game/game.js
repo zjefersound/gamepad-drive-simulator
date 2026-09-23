@@ -13,8 +13,8 @@ const PHYSICS_DT = 1 / 240;
 export const CAMERA_MODES = ['Perseguição', 'Perseguição longe', 'Capô', 'Para-choque'];
 
 // Carro aproximado por 3 círculos ao longo do comprimento
-const CAR_CIRCLES = [1.35, 0, -1.35];
-const CAR_RADIUS = 0.95;
+const CAR_CIRCLES = [1.15, -0.1, -1.35];
+const CAR_RADIUS = 0.84;
 const CONE_RADIUS = 0.3;
 
 export function createGame() {

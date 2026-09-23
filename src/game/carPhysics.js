@@ -17,11 +17,11 @@ const RAD2RPM = 60 / (2 * Math.PI);
 export const CAR = {
   mass: 1250,
   inertia: 1900,
-  cgToFront: 1.18,
+  cgToFront: 1.1,
   cgToRear: 1.37,
   cgHeight: 0.5,
-  wheelRadius: 0.33,
-  halfTrack: 0.8,
+  wheelRadius: 0.29,
+  halfTrack: 0.7,
   maxSteer: 0.62,
   gears: [-3.3, 3.4, 2.25, 1.65, 1.3, 1.05, 0.86], // índice 0 = ré
   finalDrive: 3.7,

@@ -9,7 +9,10 @@ import { CameraRig, Cones, Simulation, Skidmarks, SunLight } from './components/
 
 export default function App() {
   const game = useMemo(createGame, []);
-  useEffect(() => () => game.input.dispose(), [game]);
+  useEffect(() => {
+    if (import.meta.env.DEV) window.__game = game; // inspeção no console durante o desenvolvimento
+    return () => game.input.dispose();
+  }, [game]);
 
   return (
     <>

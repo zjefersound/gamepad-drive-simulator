@@ -62,17 +62,17 @@ export function CameraRig({ game }) {
     let fovTarget;
 
     if (mode <= 1) {
-      const baseD = mode === 0 ? 6.2 : 9.5;
+      const baseD = mode === 0 ? 5.6 : 8.8;
       const targetD = baseD + speed * 0.03 + clamp(car.axLoad, -8, 8) * 0.05;
       st.dist += (targetD - st.dist) * Math.min(1, dt * 3);
-      const h = (mode === 0 ? 2.0 : 3.3) + look.lookY * 1.6;
+      const h = (mode === 0 ? 1.8 : 3.0) + look.lookY * 1.6;
       camera.position.set(car.x - fx * st.dist, Math.max(0.6, h), -(car.y - fy * st.dist));
       camera.lookAt(car.x + fx * 2, 1.0, -(car.y + fy * 2));
       fovTarget = 58 + clamp(speed, 0, 70) * 0.26;
     } else {
       const hf = Math.cos(car.heading), hs = Math.sin(car.heading);
-      const fwd = mode === 2 ? 0.2 : 2.3;
-      const hgt = mode === 2 ? 1.42 : 0.55;
+      const fwd = mode === 2 ? 0.1 : 2.1;
+      const hgt = mode === 2 ? 1.2 : 0.5;
       camera.position.set(car.x + hf * fwd, hgt + car.pitch * fwd, -(car.y + hs * fwd));
       camera.lookAt(car.x + hf * fwd + fx * 20, hgt - 0.4 - look.lookY * 6, -(car.y + hs * fwd + fy * 20));
       camera.rotateZ(-car.roll * 0.5);

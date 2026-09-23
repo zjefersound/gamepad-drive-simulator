@@ -60,6 +60,7 @@ src/
 
 ## Recursos
 
+- **VW Gol G2 "bola"** (1995–1999) modelado proceduralmente em three.js (`src/components/GolBola.jsx`): o perfil lateral é extrudado com bordas bem arredondadas. A física usa as medidas do carro real: entre-eixos de 2,47 m, bitola de 1,40 m e pneus aro 13.
 - Circuito fechado com zebras, cronômetro de voltas e minimapa
 - Área de treino com slalom, círculo e cones derrubáveis
 - Marcas de pneu, rolagem e arfagem da carroceria
