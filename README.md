@@ -39,7 +39,7 @@ A física (`src/game/carPhysics.js`) é própria e roda a **240 Hz** em passo fi
 
 - **Modelo bicicleta de 2 eixos** com curva de pneu **Pacejka** e **círculo de atrito**: acelerar ou frear em curva tira aderência lateral.
 - **Transferência de carga**: frear pesa a dianteira e alivia a traseira.
-- **Tração traseira**, 6 marchas + ré, curva de torque, freio-motor e embreagem patinando na saída.
+- **Tração dianteira, traseira ou integral** conforme o carro, com câmbio e curva de torque vindos do `cars.json`, freio-motor e embreagem patinando na saída.
 - **Limite de esterço dependente da velocidade**: o analógico no talo leva a roda dianteira ao ângulo de deriva de pico do pneu, e não além. Por isso o carro não "sai de frente" quando você vira tudo em alta velocidade.
 - **Curva de resposta no analógico** (expoente 1,5) com deadzone reescalada: mais precisão perto do centro.
 - **Velocidade de esterço limitada**, com retorno ao centro mais rápido, para suavizar movimentos bruscos do analógico.
@@ -54,13 +54,44 @@ A física (`src/game/carPhysics.js`) é própria e roda a **240 Hz** em passo fi
 
 ```
 src/
-  game/        lógica pura (sem React): física, input, pista, áudio, loop
+  data/        cars.json (carros), cars.schema.json (validação) e helpers
+  game/        lógica pura (sem React): física, medições, input, pista, áudio, loop
   components/  cena 3D (carro, mundo, câmera, marcas de pneu, cones) e HUD
+scripts/       car-stats.mjs (mede os carros e calcula as notas)
+public/models/ modelos 3D (.glb)
 ```
+
+## Carros (`src/data/cars.json`)
+
+Cada carro é um objeto na lista `cars`. O arquivo tem schema (`cars.schema.json`), então o editor autocompleta e valida os campos.
+
+| Bloco | O que tem |
+| --- | --- |
+| identificação | `id`, `brand`, `model`, `generation`, `year`, `country`, `bodyStyle`, `description` |
+| `specs` | ficha técnica real exibida no jogo: potência, torque, peso, tração, 0–100, velocidade máxima, dimensões |
+| `stats`, `class`, `pi`, `measured` | notas de 0 a 10 no estilo jogo de corrida (velocidade, aceleração, dirigibilidade, frenagem, arrancada, fora de estrada), índice de desempenho e classe (D, C, B, A, S1, S2, X) |
+| `physics` | parâmetros da simulação: massa, centro de massa, tração (`FWD`, `RWD` ou `AWD`), curva de torque `[rpm, Nm]`, marchas, freios, aerodinâmica e aderência dos pneus |
+| `asset` | modelo 3D (`.glb`): arquivo, para onde aponta a frente, nós das rodas, materiais das lanternas e créditos |
+
+### Adicionando um carro
+
+1. Coloque o `.glb` em `public/models/`.
+2. Copie o bloco de um carro existente e ajuste `specs`, `physics` e `asset`. O modelo é alinhado automaticamente pelos eixos das rodas indicadas em `asset.wheelNodes`.
+3. Rode as medições e grave as notas:
+
+```bash
+npm run car-stats -- --write
+```
+
+O script roda testes padronizados na própria física do jogo: 0–60, 0–100, velocidade máxima, frenagem 100–0, aderência lateral e arrancada na grama. Os resultados viram as notas, o PI e a classe. Sem `--write`, ele só mostra os números. Aproveite para comparar com a ficha técnica e calibrar a física.
+
+## Créditos
+
+- Modelo 3D **"1999 Volkswagen Gol 2000 GTi (G2)"** por [Ezo](https://sketchfab.com/EzoYEAHH) ([Sketchfab](https://sketchfab.com/3d-models/1999-volkswagen-gol-2000-gti-g2-be772162e96746d0a4470e52dc7fbb1d)), licença [CC BY-NC 4.0](http://creativecommons.org/licenses/by-nc/4.0/). Uso **não comercial**, com atribuição.
 
 ## Recursos
 
-- **VW Gol G2 "bola"** (1995–1999) modelado proceduralmente em three.js (`src/components/GolBola.jsx`): o perfil lateral é extrudado com bordas bem arredondadas. A física usa as medidas do carro real: entre-eixos de 2,47 m, bitola de 1,40 m e pneus aro 13.
+- **VW Gol GTI 16V G2 "bola"** (1999) com o modelo 3D acima. Se o arquivo não carregar, entra um Gol bola modelado proceduralmente (`src/components/GolBola.jsx`).
 - Circuito fechado com zebras, cronômetro de voltas e minimapa
 - Área de treino com slalom, círculo e cones derrubáveis
 - Marcas de pneu, rolagem e arfagem da carroceria

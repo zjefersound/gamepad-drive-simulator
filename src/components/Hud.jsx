@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ASSISTS, CAR } from '../game/carPhysics';
+import { ASSISTS } from '../game/carPhysics';
+import CarCard, { ModelCredits } from './CarCard';
 import { CAMERA_MODES } from '../game/game';
 import { formatTime } from '../game/math';
 
@@ -100,8 +101,9 @@ export default function Hud({ game }) {
     return () => { clearInterval(id); window.removeEventListener('keydown', onKey); };
   }, [game]);
 
-  const rpmFrac = Math.min(1, s.rpm / (CAR.redline + 300));
-  const redFrac = (CAR.redline - 600) / (CAR.redline + 300);
+  const redline = game.car.spec.redline;
+  const rpmFrac = Math.min(1, s.rpm / (redline + 300));
+  const redFrac = (redline - 600) / (redline + 300);
 
   return (
     <div className="hud">
@@ -168,10 +170,13 @@ export default function Hud({ game }) {
       {!s.started && (
         <div className="overlay">
           <h1>Gamepad Drive Simulator</h1>
+          <CarCard car={game.carData} />
           <p>Conecte um controle Xbox e pressione qualquer botão</p>
           <p className="dim">ou clique / aperte uma tecla para usar o teclado (e ativar o som)</p>
         </div>
       )}
+
+      <ModelCredits car={game.carData} />
     </div>
   );
 }

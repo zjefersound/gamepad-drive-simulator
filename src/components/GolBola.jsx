@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import { CAR } from '../game/carPhysics';
 
 /*
  * VW Gol G2 "bola" (1995–1999), 3 portas, modelado proceduralmente.
@@ -9,10 +8,12 @@ import { CAR } from '../game/carPhysics';
  * Medidas aproximadas do carro real: 3,93 m x 1,64 m x 1,39 m, entre-eixos 2,47 m.
  */
 
-const FX = CAR.cgToFront; // eixo dianteiro
-const RX = -CAR.cgToRear; // eixo traseiro
+// Referencial próprio do modelo (o Car.jsx desloca para alinhar com a física)
+export const GOL_FRONT_AXLE = 1.1;
+const FX = GOL_FRONT_AXLE; // eixo dianteiro
+const RX = -1.37; // eixo traseiro
 const ARCH = 0.43; // raio da caixa de roda (o bevel "come" ~0,06)
-const WY = CAR.wheelRadius;
+const WY = 0.29;
 
 function extrude(points, width, bevel, arches = false) {
   const s = new THREE.Shape();

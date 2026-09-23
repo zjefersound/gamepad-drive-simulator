@@ -4,7 +4,7 @@ import { clamp, moveTowards } from './math.js';
  * Modelo de veículo "bicicleta" (2 eixos) com:
  *  - pneus com curva Pacejka simplificada e círculo de atrito (tração x curva)
  *  - transferência de carga longitudinal (frenagem pesa a dianteira)
- *  - tração traseira, câmbio de 6 marchas + ré, curva de torque
+ *  - tração dianteira, traseira ou integral, câmbio e curva de torque vindos do cars.json
  *  - assistências: controle de tração, ESP, contra-esterço e limite de esterço
  *    dependente da velocidade (o grande segredo da boa dirigibilidade no gamepad)
  *
@@ -14,31 +14,52 @@ import { clamp, moveTowards } from './math.js';
 export const G = 9.81;
 const RAD2RPM = 60 / (2 * Math.PI);
 
-export const CAR = {
-  mass: 1250,
-  inertia: 1900,
-  cgToFront: 1.1,
-  cgToRear: 1.37,
+const DRIVE_FRONT_SHARE = { FWD: 1, RWD: 0, AWD: 0.4 };
+
+const DEFAULTS = {
+  mass: 1200,
+  cgToFront: 1.2,
+  cgToRear: 1.3,
   cgHeight: 0.5,
-  wheelRadius: 0.29,
-  halfTrack: 0.7,
-  maxSteer: 0.62,
-  gears: [-3.3, 3.4, 2.25, 1.65, 1.3, 1.05, 0.86], // índice 0 = ré
-  finalDrive: 3.7,
-  drivetrainEff: 0.85,
-  idleRpm: 900,
-  redline: 7200,
-  shiftUpRpm: 6800,
-  shiftDownRpm: 2800,
-  engineBrake: 55,
-  brakeForce: 15000,
-  brakeBias: 0.64,
-  drag: 0.42,
-  rolling: 12,
+  wheelRadius: 0.3,
+  halfTrack: 0.72,
+  maxSteer: 0.6,
+  drivetrain: 'RWD',
+  torqueCurve: [[1000, 150], [4000, 200], [6500, 170]],
+  idleRpm: 850,
+  redline: 6800,
+  shiftUpRpm: 6500,
+  shiftDownRpm: 2600,
+  engineBrake: 40,
+  gears: [3.5, 2.1, 1.45, 1.1, 0.9],
+  reverseGear: 3.3,
+  finalDrive: 3.9,
+  drivetrainEff: 0.87,
+  brakeForce: 12000,
+  brakeBias: 0.66,
+  drag: 0.4,
+  rollingResistance: 0.013,
   muFront: 1.0,
-  muRear: 1.12,
+  muRear: 1.1,
 };
-CAR.wheelbase = CAR.cgToFront + CAR.cgToRear;
+
+/** Monta a especificação de física a partir de um carro do cars.json. */
+export function buildSpec(carData) {
+  const p = { ...DEFAULTS, ...(carData.physics || {}) };
+  p.wheelbase = p.cgToFront + p.cgToRear;
+  p.inertia = p.inertia ?? p.mass * p.cgToFront * p.cgToRear * 1.15;
+  p.driveFront = p.driveFrontShare ?? DRIVE_FRONT_SHARE[p.drivetrain] ?? 0;
+  p.topGear = p.gears.length;
+  p.torqueCurve = [...p.torqueCurve].sort((x, y) => x[0] - y[0]);
+
+  // Colisão: 3 círculos ao longo do comprimento, centrados entre os eixos
+  const length = (carData.specs?.lengthMm ?? 4000) / 1000;
+  const radius = (carData.specs?.widthMm ?? 1700) / 2000;
+  const mid = (p.cgToFront - p.cgToRear) / 2;
+  const reach = length / 2 - radius;
+  p.collision = { radius, circles: [mid + reach, mid, mid - reach] };
+  return p;
+}
 
 export const ASSISTS = [
   { name: 'Completa', tc: true, esp: true, countersteer: 0.55, steerAllowance: 1.0 },
@@ -62,29 +83,39 @@ export const PEAK_SLIP = (() => {
   return best;
 })();
 
-export function engineTorque(rpm) {
-  const t = clamp((rpm - 800) / (CAR.redline - 800), 0, 1);
-  return 185 + 155 * Math.sin(t * Math.PI * 0.95);
+/** Torque (Nm) interpolado da curva do carro. */
+export function engineTorque(p, rpm) {
+  const c = p.torqueCurve;
+  if (rpm <= c[0][0]) return c[0][1];
+  for (let i = 1; i < c.length; i++) {
+    if (rpm <= c[i][0]) {
+      const [r0, t0] = c[i - 1], [r1, t1] = c[i];
+      return t0 + ((t1 - t0) * (rpm - r0)) / (r1 - r0);
+    }
+  }
+  return c[c.length - 1][1];
 }
 
-const gearRatio = (gear) => (gear === -1 ? CAR.gears[0] : gear === 0 ? 0 : CAR.gears[gear]);
+const gearRatio = (p, gear) => (gear === -1 ? -p.reverseGear : gear === 0 ? 0 : p.gears[gear - 1]);
 
 export function wheelRpm(car, gear) {
-  return Math.abs((car.vx / CAR.wheelRadius) * gearRatio(gear) * CAR.finalDrive) * RAD2RPM;
+  const p = car.spec;
+  return Math.abs((car.vx / p.wheelRadius) * gearRatio(p, gear) * p.finalDrive) * RAD2RPM;
 }
 
-export function createCarState({ x, y, heading }) {
+export function createCarState({ x, y, heading }, spec) {
   return {
+    spec,
     x, y, heading,
     vx: 0, vy: 0, r: 0,
     wvx: 0, wvy: 0,
     steer: 0,
     throttle: 0, brake: 0, handbrake: 0,
     gear: 1, shiftTimer: 0, reverseTimer: 0,
-    rpm: CAR.idleRpm, rpmTarget: CAR.idleRpm,
+    rpm: spec.idleRpm, rpmTarget: spec.idleRpm,
     axLoad: 0, ayLoad: 0,
     pitch: 0, pitchVel: 0, roll: 0, rollVel: 0,
-    slipF: 0, slipR: 0, latUseR: 0,
+    slipF: 0, slipR: 0, latUseF: 0, latUseR: 0,
     wheelspin: 0, tcActive: false, espActive: false,
     skidF: 0, skidR: 0,
     wheelAngF: 0, wheelAngR: 0,
@@ -92,8 +123,8 @@ export function createCarState({ x, y, heading }) {
   };
 }
 
-export function resetCar(car, { x, y, heading }) {
-  Object.assign(car, createCarState({ x, y, heading }));
+export function resetCar(car, pose) {
+  Object.assign(car, createCarState(pose, car.spec));
 }
 
 function setGear(car, gear, shiftTime = 0.18) {
@@ -104,13 +135,14 @@ function setGear(car, gear, shiftTime = 0.18) {
 
 /** Processa entradas (câmbio, pedais, direção). Roda uma vez por frame. */
 export function controlStep(car, input, dt, assist, manual, pressed) {
+  const p = car.spec;
   const fwd = car.vx;
   car.shiftTimer = Math.max(0, car.shiftTimer - dt);
 
   if (manual) {
     if (pressed.gearUp) {
       if (car.gear === -1) { if (fwd > -1.5) setGear(car, 1, 0.12); }
-      else if (car.gear < 6) setGear(car, car.gear + 1);
+      else if (car.gear < p.topGear) setGear(car, car.gear + 1);
     }
     if (pressed.gearDown) {
       if (car.gear === 1) { if (fwd < 1.5) setGear(car, -1, 0.12); }
@@ -137,11 +169,11 @@ export function controlStep(car, input, dt, assist, manual, pressed) {
 
     if (car.gear >= 1 && car.shiftTimer === 0) {
       const rpm = wheelRpm(car, car.gear);
-      if (rpm > CAR.shiftUpRpm && car.gear < 6) setGear(car, car.gear + 1, 0.2);
+      if (rpm > p.shiftUpRpm && car.gear < p.topGear) setGear(car, car.gear + 1, 0.2);
       else if (car.gear > 1) {
         const lower = wheelRpm(car, car.gear - 1);
-        const kickdown = car.throttle > 0.9 && lower < 5600;
-        if ((rpm < CAR.shiftDownRpm && lower < CAR.shiftUpRpm - 900) || kickdown) setGear(car, car.gear - 1, 0.15);
+        const kickdown = car.throttle > 0.9 && lower < p.shiftUpRpm - 1000;
+        if ((rpm < p.shiftDownRpm && lower < p.shiftUpRpm - 900) || kickdown) setGear(car, car.gear - 1, 0.15);
       }
     }
   }
@@ -154,13 +186,13 @@ export function controlStep(car, input, dt, assist, manual, pressed) {
   const shaped = Math.sign(raw) * Math.pow(Math.abs(raw), 1.5);
   // Limite de esterço pela velocidade: ângulo necessário para o limite de aderência
   // + ângulo de deriva de pico do pneu. Evita "sair de frente" ao jogar o analógico no talo.
-  const mu = CAR.muFront * car.surfaceGrip;
+  const mu = p.muFront * car.surfaceGrip;
   const v2 = Math.max(speed * speed, 1);
   // (desconta a deriva típica da traseira no limite, que também soma na dianteira)
   const rearSlipEst = 0.1 * clamp((speed - 5) / 15, 0, 1);
   const limit = Math.min(
-    CAR.maxSteer,
-    Math.atan((CAR.wheelbase * mu * G) / v2) + PEAK_SLIP * assist.steerAllowance - rearSlipEst,
+    p.maxSteer,
+    Math.atan((p.wheelbase * mu * G) / v2) + PEAK_SLIP * assist.steerAllowance - rearSlipEst,
   );
   let target = shaped * limit;
 
@@ -169,16 +201,40 @@ export function controlStep(car, input, dt, assist, manual, pressed) {
     const beta = Math.atan2(car.vy, car.vx);
     target += beta * assist.countersteer;
   }
-  target = clamp(target, -CAR.maxSteer, CAR.maxSteer);
+  target = clamp(target, -p.maxSteer, p.maxSteer);
 
   const returning = Math.abs(target) < Math.abs(car.steer) || Math.sign(target) !== Math.sign(car.steer);
   const rate = returning ? 5.5 : 3.4;
   car.steer = moveTowards(car.steer, target, rate * dt);
 }
 
+/**
+ * Força longitudinal de um eixo: tração + freio, limitada pela aderência.
+ * Retorna também quanto de aderência lateral sobra (círculo de atrito).
+ */
+function axleLongitudinal(drive, braking, Fmax, latUse, tc) {
+  let Fx = drive + braking;
+  let wheelspin = 0, tcActive = false, latExtra = 1;
+  if (Math.abs(drive) > Math.abs(braking)) {
+    const tcLimit = Fmax * Math.sqrt(Math.max(0.25, 1 - latUse * latUse)) * 0.97;
+    if (tc && Math.abs(Fx) > tcLimit) {
+      Fx = Math.sign(Fx) * tcLimit;
+      tcActive = true;
+    } else if (Math.abs(Fx) > Fmax) {
+      wheelspin = clamp((Math.abs(Fx) / Fmax - 1) * 2 + 0.35, 0, 1);
+      Fx = Math.sign(Fx) * Fmax * 0.9;
+      latExtra = 0.75;
+    }
+  } else {
+    Fx = clamp(Fx, -Fmax * 0.95, Fmax * 0.95); // ABS
+  }
+  return { Fx, wheelspin, tcActive, latExtra };
+}
+
 /** Integra a dinâmica do veículo por um passo fixo. */
 export function physicsStep(car, dt, assist) {
-  const { mass: m, inertia: I, cgToFront: a, cgToRear: b, cgHeight: h, wheelbase: L } = CAR;
+  const p = car.spec;
+  const { mass: m, inertia: I, cgToFront: a, cgToRear: b, cgHeight: h, wheelbase: L } = p;
   const { vx, vy, r } = car;
   const d = car.steer;
   const cosd = Math.cos(d), sind = Math.sin(d);
@@ -187,8 +243,8 @@ export function physicsStep(car, dt, assist) {
   // Carga nos eixos com transferência longitudinal
   const Fzf = clamp((m * G * b) / L - (m * car.axLoad * h) / L, m * G * 0.15, m * G * 0.85);
   const Fzr = m * G - Fzf;
-  const FmaxF = CAR.muFront * car.surfaceGrip * Fzf;
-  const FmaxR = CAR.muRear * car.surfaceGrip * Fzr;
+  const FmaxF = p.muFront * car.surfaceGrip * Fzf;
+  const FmaxR = p.muRear * car.surfaceGrip * Fzr;
 
   // Velocidades nos eixos
   const vfy = vy + a * r;
@@ -200,79 +256,67 @@ export function physicsStep(car, dt, assist) {
   const slipR = Math.atan2(vry, Math.max(Math.abs(vx), LOW));
 
   // Motor
-  const ratio = gearRatio(car.gear);
+  const ratio = gearRatio(p, car.gear);
   let rpm = wheelRpm(car, car.gear);
   if (Math.abs(car.gear) === 1) {
     // embreagem patinando na saída
-    rpm = Math.max(rpm, CAR.idleRpm + car.throttle * 3200 * (1 - clamp(Math.abs(vx) / 9, 0, 1)));
+    rpm = Math.max(rpm, p.idleRpm + car.throttle * 3200 * (1 - clamp(Math.abs(vx) / 9, 0, 1)));
   }
-  rpm = Math.max(rpm, CAR.idleRpm);
+  rpm = Math.max(rpm, p.idleRpm);
 
   const sv = clamp(vx / 0.6, -1, 1); // sinal suave: evita tremedeira parado
+  const svF = clamp(vfLong / 0.6, -1, 1);
+  const handbrakeOn = car.handbrake > 0.1;
   let driveForce = 0;
   let engBrake = 0;
-  const clutchIn = car.handbrake > 0.5;
+  // Freio de mão só desacopla o motor quando ele empurra a traseira
+  const clutchIn = car.handbrake > 0.5 && p.driveFront < 1;
   if (car.shiftTimer <= 0 && !clutchIn) {
     if (car.throttle > 0.02) {
-      const torque = rpm > CAR.redline ? 0 : engineTorque(rpm) * car.throttle;
-      driveForce = (torque * ratio * CAR.finalDrive * CAR.drivetrainEff) / CAR.wheelRadius;
+      const torque = rpm > p.redline ? 0 : engineTorque(p, rpm) * car.throttle;
+      driveForce = (torque * ratio * p.finalDrive * p.drivetrainEff) / p.wheelRadius;
     } else {
-      engBrake = ((CAR.engineBrake * (rpm / CAR.redline) * Math.abs(ratio) * CAR.finalDrive) / CAR.wheelRadius) *
+      engBrake = ((p.engineBrake * (rpm / p.redline) * Math.abs(ratio) * p.finalDrive) / p.wheelRadius) *
         clamp(Math.abs(vx) / 3, 0, 1);
     }
   }
 
-  const brake = car.brake * CAR.brakeForce;
-  const svF = clamp(vfLong / 0.6, -1, 1);
-  // Dianteira: só freio, com ABS
-  let FxF = clamp(-svF * brake * CAR.brakeBias, -FmaxF * 0.95, FmaxF * 0.95);
+  const brake = car.brake * p.brakeForce;
+  const kF = p.driveFront, kR = 1 - p.driveFront;
 
-  // Traseira: tração, freio, freio-motor, freio de mão
-  let FxR;
-  let wheelspin = 0;
-  let tcActive = false;
-  let latCapExtraR = 1;
-  if (car.handbrake > 0.1) {
-    FxR = -sv * FmaxR * 0.8 * car.handbrake;
-    latCapExtraR = 0.55;
+  const front = axleLongitudinal(
+    driveForce * kF, -svF * (brake * p.brakeBias + engBrake * kF), FmaxF, car.latUseF, assist.tc,
+  );
+  let rear;
+  if (handbrakeOn) {
+    rear = { Fx: -sv * FmaxR * 0.8 * car.handbrake, wheelspin: 0, tcActive: false, latExtra: 0.55 };
   } else {
-    const braking = -sv * (brake * (1 - CAR.brakeBias) + engBrake);
-    FxR = driveForce + braking;
-    const isDriving = Math.abs(driveForce) > Math.abs(braking);
-    if (isDriving) {
-      const tcLimit = FmaxR * Math.sqrt(Math.max(0.25, 1 - car.latUseR * car.latUseR)) * 0.97;
-      if (assist.tc && Math.abs(FxR) > tcLimit) {
-        FxR = Math.sign(FxR) * tcLimit;
-        tcActive = true;
-      } else if (Math.abs(FxR) > FmaxR) {
-        wheelspin = clamp((Math.abs(FxR) / FmaxR - 1) * 2 + 0.35, 0, 1);
-        FxR = Math.sign(FxR) * FmaxR * 0.9;
-        latCapExtraR = 0.75;
-      }
-    } else {
-      FxR = clamp(FxR, -FmaxR * 0.95, FmaxR * 0.95);
-    }
+    rear = axleLongitudinal(
+      driveForce * kR, -sv * (brake * (1 - p.brakeBias) + engBrake * kR), FmaxR, car.latUseR, assist.tc,
+    );
   }
+  const FxF = front.Fx, FxR = rear.Fx;
 
   // Círculo de atrito: o que sobra de aderência vai para a lateral
-  const latCapF = Math.sqrt(Math.max(0, 1 - (FxF / FmaxF) ** 2));
-  const latCapR = Math.sqrt(Math.max(0, 1 - (FxR / FmaxR) ** 2)) * latCapExtraR;
+  const latCapF = Math.sqrt(Math.max(0, 1 - (FxF / FmaxF) ** 2)) * front.latExtra;
+  const latCapR = Math.sqrt(Math.max(0, 1 - (FxR / FmaxR) ** 2)) * rear.latExtra;
   const FyF = -tireCurve(slipF) * FmaxF * latCapF;
   const FyR = -tireCurve(slipR, PC_REAR) * FmaxR * latCapR;
+  car.latUseF = Math.abs(FyF) / FmaxF;
   car.latUseR = Math.abs(FyR) / FmaxR;
 
   // Forças no corpo
   const Ffx = FxF * cosd - FyF * sind;
   const Ffy = FxF * sind + FyF * cosd;
-  const roll = CAR.rolling + car.surfaceRoll;
-  const fx = Ffx + FxR - CAR.drag * speed * vx - roll * vx;
-  const fy = Ffy + FyR - CAR.drag * speed * vy - car.surfaceRoll * vy;
+  const rolling = p.rollingResistance * m * G * sv + 3 * vx;
+  const fx = Ffx + FxR - p.drag * speed * vx - rolling - car.surfaceRoll * vx;
+  const fy = Ffy + FyR - p.drag * speed * vy - car.surfaceRoll * vy;
   let torque = a * Ffy - b * FyR;
 
   // ESP: corta rotação excessiva (sobre-esterço) de forma progressiva
   let espActive = false;
   if (assist.esp && speed > 4) {
-    const rMax = (CAR.muRear * car.surfaceGrip * G) / speed;
+    const rMax = (p.muRear * car.surfaceGrip * G) / speed;
     const rDes = clamp((vx * Math.tan(d)) / L, -rMax, rMax);
     const err = r - rDes;
     if (Math.abs(r) > Math.abs(rDes) + 0.08 && Math.sign(err) === Math.sign(r)) {
@@ -308,7 +352,9 @@ export function physicsStep(car, dt, assist) {
   car.axLoad += (ax - car.axLoad) * k;
   car.ayLoad += (ay - car.ayLoad) * k;
 
-  car.rpmTarget = Math.min(CAR.redline + 150, rpm + wheelspin * 2600 + (tcActive ? 350 : 0));
+  const wheelspin = Math.max(front.wheelspin, rear.wheelspin);
+  const tcActive = front.tcActive || rear.tcActive;
+  car.rpmTarget = Math.min(p.redline + 150, rpm + wheelspin * 2600 + (tcActive ? 350 : 0));
   car.slipF = slipF;
   car.slipR = slipR;
   car.wheelspin = wheelspin;
@@ -316,17 +362,16 @@ export function physicsStep(car, dt, assist) {
   car.espActive = espActive;
 
   // Rotação visual das rodas
-  car.wheelAngF += (vfLong / CAR.wheelRadius) * dt;
-  if (car.handbrake <= 0.1) {
-    car.wheelAngR += (vx / CAR.wheelRadius + wheelspin * Math.sign(driveForce) * 25) * dt;
-  }
+  const spinDir = Math.sign(driveForce) * 25;
+  car.wheelAngF += (vfLong / p.wheelRadius + front.wheelspin * spinDir) * dt;
+  if (!handbrakeOn) car.wheelAngR += (vx / p.wheelRadius + rear.wheelspin * spinDir) * dt;
 
   // Intensidade de marca de pneu / chiado
   const moving = clamp((speed - 2) / 3, 0, 1);
   const latR = clamp((Math.abs(slipR) - PEAK_SLIP * 1.1) / 0.25, 0, 1);
   const latF = clamp((Math.abs(slipF) - PEAK_SLIP * 1.25) / 0.25, 0, 1);
-  car.skidR = Math.max(latR * moving, wheelspin, car.handbrake > 0.1 ? moving : 0);
-  car.skidF = latF * moving;
+  car.skidR = Math.max(latR * moving, rear.wheelspin, handbrakeOn ? moving : 0);
+  car.skidF = Math.max(latF * moving, front.wheelspin);
 }
 
 /** Suspensão visual (mola-amortecedor em pitch e roll). */

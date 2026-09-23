@@ -1,30 +1,30 @@
 import { createInput } from './input.js';
 import { createAudio } from './audio.js';
 import {
-  ASSISTS, CAR, G, controlStep, createCarState, physicsStep, resetCar, suspensionStep,
+  ASSISTS, G, buildSpec, controlStep, createCarState, physicsStep, resetCar, suspensionStep,
 } from './carPhysics.js';
 import {
   CURB_WIDTH, ROAD_WIDTH, WORLD_LIMIT, createCones, createTrack, generateTrees,
   nearestOnTrack, resetCones, spawnAt,
 } from './track.js';
 import { clamp } from './math.js';
+import { getCar } from '../data/cars.js';
 
 const PHYSICS_DT = 1 / 240;
 export const CAMERA_MODES = ['Perseguição', 'Perseguição longe', 'Capô', 'Para-choque'];
 
-// Carro aproximado por 3 círculos ao longo do comprimento
-const CAR_CIRCLES = [1.15, -0.1, -1.35];
-const CAR_RADIUS = 0.84;
 const CONE_RADIUS = 0.3;
 
-export function createGame() {
+export function createGame(carId) {
+  const carData = getCar(carId);
   const track = createTrack();
   const spawnIndex = track.N - 10;
   return {
     track,
     trees: generateTrees(track),
     cones: createCones(),
-    car: createCarState(spawnAt(track, spawnIndex)),
+    carData,
+    car: createCarState(spawnAt(track, spawnIndex), buildSpec(carData)),
     input: createInput(),
     audio: createAudio(),
     settings: { assistLevel: 0, manual: false, cameraMode: 0 },
@@ -63,7 +63,7 @@ function resolveContact(game, rpx, rpy, nx, ny, pen, restitution) {
   const vpy = car.wvy + car.r * rpx;
   const vn = vpx * nx + vpy * ny;
   if (vn >= 0) return;
-  const m = CAR.mass, I = CAR.inertia;
+  const m = car.spec.mass, I = car.spec.inertia;
   const rn = rpx * ny - rpy * nx;
   const j = (-(1 + restitution) * vn) / (1 / m + (rn * rn) / I);
   car.wvx += (j * nx) / m;
@@ -82,6 +82,7 @@ function resolveContact(game, rpx, rpy, nx, ny, pen, restitution) {
 
 function collide(game) {
   const car = game.car;
+  const { circles: CAR_CIRCLES, radius: CAR_RADIUS } = car.spec.collision;
   toWorld(car);
   const c = Math.cos(car.heading), s = Math.sin(car.heading);
   for (const off of CAR_CIRCLES) {
@@ -109,6 +110,7 @@ function collide(game) {
 
 function updateCones(game, dt) {
   const car = game.car;
+  const { circles: CAR_CIRCLES, radius: CAR_RADIUS } = car.spec.collision;
   const c = Math.cos(car.heading), s = Math.sin(car.heading);
   for (const cone of game.cones) {
     const ddx = cone.x - car.x, ddy = cone.y - car.y;
@@ -238,7 +240,7 @@ export function updateGame(game, dt) {
     game.rumbleTimer = 0.09;
     const speed = Math.hypot(car.vx, car.vy);
     const offroad = car.onRoad ? 0 : clamp(speed / 15, 0, 1) * (0.15 + Math.random() * 0.2);
-    const limiter = car.rpm > CAR.redline - 50 ? 0.12 : 0;
+    const limiter = car.rpm > car.spec.redline - 50 ? 0.12 : 0;
     const strong = game.impact + offroad + car.wheelspin * 0.25;
     const weak = Math.max(car.skidR, car.skidF) * 0.35 + limiter + (car.tcActive || car.espActive ? 0.1 : 0) + game.impact * 0.5;
     if (strong > 0.02 || weak > 0.02) input.rumble(strong, weak, 130);

@@ -2,7 +2,6 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { updateGame } from '../game/game';
-import { CAR } from '../game/carPhysics';
 import { angleDiff, clamp } from '../game/math';
 import { coneTexture } from './textures';
 
@@ -113,8 +112,8 @@ export function Skidmarks({ game }) {
       const intensity = w < 2 ? car.skidF : car.skidR;
       const last = st.current.last[w];
       if (intensity < 0.3) { last.active = false; continue; }
-      const lx = w < 2 ? CAR.cgToFront : -CAR.cgToRear;
-      const ly = w % 2 === 0 ? CAR.halfTrack : -CAR.halfTrack;
+      const lx = w < 2 ? car.spec.cgToFront : -car.spec.cgToRear;
+      const ly = w % 2 === 0 ? car.spec.halfTrack : -car.spec.halfTrack;
       const px = car.x + lx * c - ly * s;
       const py = car.y + lx * s + ly * c;
       if (!last.active) { Object.assign(last, { x: px, y: py, active: true }); continue; }

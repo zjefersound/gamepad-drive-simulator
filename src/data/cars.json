@@ -1,0 +1,145 @@
+{
+  "$schema": "./cars.schema.json",
+  "cars": [
+    {
+      "id": "vw-gol-gti-16v-1999",
+      "brand": "Volkswagen",
+      "model": "Gol GTI 16V",
+      "generation": "G2 \"bola\"",
+      "year": 1999,
+      "country": "Brasil",
+      "bodyStyle": "Hatch 3 portas",
+      "description": "O Gol bola esportivo: motor 2.0 16V, tração dianteira e câmbio de 5 marchas. Leve, esperto e divertido de jogar de lado com o freio de mão.",
+      "class": "C",
+      "pi": 488,
+      "specs": {
+        "engine": "2.0 16V aspirado, 4 cilindros em linha",
+        "displacementCc": 1984,
+        "powerCv": 145,
+        "powerRpm": 6250,
+        "torqueNm": 180,
+        "torqueRpm": 4500,
+        "drivetrain": "FWD",
+        "transmission": "Manual de 5 marchas",
+        "weightKg": 1030,
+        "weightDistributionFront": 0.62,
+        "lengthMm": 3810,
+        "widthMm": 1640,
+        "heightMm": 1390,
+        "wheelbaseMm": 2468,
+        "tires": "185/55 R15",
+        "topSpeedKmh": 205,
+        "zeroToHundredS": 8.9,
+        "source": "Valores aproximados de fábrica da época"
+      },
+      "stats": {
+        "speed": 4,
+        "acceleration": 5.7,
+        "braking": 5.8,
+        "handling": 3.9,
+        "launch": 5.6,
+        "offroad": 4.5
+      },
+      "physics": {
+        "mass": 1110,
+        "inertia": 1450,
+        "cgToFront": 0.94,
+        "cgToRear": 1.53,
+        "cgHeight": 0.5,
+        "wheelRadius": 0.28,
+        "halfTrack": 0.68,
+        "maxSteer": 0.6,
+        "drivetrain": "FWD",
+        "torqueCurve": [
+          [
+            800,
+            115
+          ],
+          [
+            1500,
+            135
+          ],
+          [
+            2500,
+            155
+          ],
+          [
+            3500,
+            170
+          ],
+          [
+            4500,
+            180
+          ],
+          [
+            5500,
+            176
+          ],
+          [
+            6250,
+            166
+          ],
+          [
+            6900,
+            148
+          ],
+          [
+            7200,
+            130
+          ]
+        ],
+        "idleRpm": 850,
+        "redline": 6900,
+        "shiftUpRpm": 6600,
+        "shiftDownRpm": 2600,
+        "engineBrake": 35,
+        "gears": [
+          3.455,
+          2.118,
+          1.444,
+          1.129,
+          0.886
+        ],
+        "reverseGear": 3.17,
+        "finalDrive": 3.94,
+        "drivetrainEff": 0.78,
+        "brakeForce": 11500,
+        "brakeBias": 0.7,
+        "drag": 0.37,
+        "rollingResistance": 0.013,
+        "muFront": 1,
+        "muRear": 1.15
+      },
+      "asset": {
+        "file": "models/1999_volkswagen_gol_2000_gti_g2.glb",
+        "forward": "-z",
+        "scale": 1,
+        "wheelNodes": {
+          "front": "Gol_wheel_F_5",
+          "rear": "Gol_wheel_R_4"
+        },
+        "brakeLightMaterials": [
+          "Material.001",
+          "Taillight_pic"
+        ],
+        "fallback": "gol-bola-procedural",
+        "credits": {
+          "title": "1999 Volkswagen Gol 2000 GTi (G2)",
+          "author": "Ezo",
+          "authorUrl": "https://sketchfab.com/EzoYEAHH",
+          "source": "https://sketchfab.com/3d-models/1999-volkswagen-gol-2000-gti-g2-be772162e96746d0a4470e52dc7fbb1d",
+          "license": "CC BY-NC 4.0",
+          "licenseUrl": "http://creativecommons.org/licenses/by-nc/4.0/"
+        }
+      },
+      "measured": {
+        "zeroToSixtyS": 3.88,
+        "zeroToHundredS": 8.28,
+        "zeroToSixtyGrassS": 7.75,
+        "topSpeedKmh": 203,
+        "braking100to0M": 39.3,
+        "lateralG": 0.95
+      }
+    }
+  ]
+}
